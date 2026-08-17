@@ -15,21 +15,22 @@ st.write("Create a personalized birthday wish with a birthday tune! 🎉")
 st.divider()
 
 name = st.text_input(
-    "Enter the birthday person's name:",
+    "Birthday person's name",
     placeholder="Example: Piyush"
 )
 
 sender = st.text_input(
-    "Your name:",
+    "Your name",
     placeholder="Example: Ashwin"
 )
 
 if st.button("🎉 Generate Birthday Wish"):
 
     if name.strip() == "":
-        st.warning("Please enter the birthday person's name.")
+        st.warning("Please enter a name.")
 
     else:
+
         if sender.strip() == "":
             sender = "Your Friend"
 
@@ -41,8 +42,8 @@ if st.button("🎉 Generate Birthday Wish"):
 
             ### 🥳 Wishing you a wonderful birthday!
 
-            May your day be filled with happiness, laughter,
-            success and many beautiful memories.
+            May your day be filled with happiness,
+            laughter, success and beautiful memories.
 
             🎁 Have an amazing year ahead!
 
@@ -52,18 +53,92 @@ if st.button("🎉 Generate Birthday Wish"):
 
 st.divider()
 
-st.subheader("🎵 Birthday Tune")
+# =========================================================
+# BIRTHDAY TUNES
+# =========================================================
+
+st.subheader("🎵 Birthday Tunes")
+
+tune_choice = st.selectbox(
+    "Choose a tune",
+    [
+        "🎂 Happy Birthday",
+        "🎉 Celebration",
+        "🌟 Congratulations",
+        "🎵 Simple Melody",
+        "🎹 Custom Tune"
+    ]
+)
 
 SAMPLE_RATE = 44100
 
-notes = [
-    262, 262, 294, 262, 349, 330,
-    262, 262, 294, 262, 392, 349,
-    262, 262, 523, 440, 349, 330, 294,
-    466, 466, 440, 349, 392, 349
-]
+tunes = {
 
-def generate_tune(notes, duration=0.35):
+    "🎂 Happy Birthday": [
+        262, 262, 294, 262, 349, 330,
+        262, 262, 294, 262, 392, 349,
+        262, 262, 523, 440, 349, 330, 294,
+        466, 466, 440, 349, 392, 349
+    ],
+
+    "🎉 Celebration": [
+        392, 440, 494, 523,
+        494, 440, 392, 330,
+        392, 440, 494, 523,
+        587, 523, 494, 440
+    ],
+
+    "🌟 Congratulations": [
+        262, 330, 392, 523,
+        392, 440, 523, 659,
+        523, 440, 392, 330,
+        392, 523, 659, 784
+    ],
+
+    "🎵 Simple Melody": [
+        262, 294, 330, 349,
+        392, 440, 494, 523,
+        494, 440, 392, 349,
+        330, 294, 262
+    ]
+}
+
+if tune_choice == "🎹 Custom Tune":
+
+    custom_notes = st.text_input(
+        "Enter frequencies separated by commas",
+        "262,294,330,349,392,440,494,523"
+    )
+
+    try:
+
+        selected_notes = [
+            float(x.strip())
+            for x in custom_notes.split(",")
+            if x.strip()
+        ]
+
+    except ValueError:
+
+        st.error("Please enter valid frequencies.")
+
+        selected_notes = []
+
+else:
+
+    selected_notes = tunes[tune_choice]
+
+
+note_duration = st.slider(
+    "Note Duration",
+    0.15,
+    0.60,
+    0.35,
+    0.05
+)
+
+
+def generate_tune(notes, duration):
 
     audio = np.array([], dtype=np.float32)
 
@@ -80,10 +155,22 @@ def generate_tune(notes, duration=0.35):
             2 * np.pi * frequency * t
         )
 
-        fade = min(len(tone) // 20, 500)
+        fade = min(
+            len(tone) // 20,
+            500
+        )
 
-        tone[:fade] *= np.linspace(0, 1, fade)
-        tone[-fade:] *= np.linspace(1, 0, fade)
+        tone[:fade] *= np.linspace(
+            0,
+            1,
+            fade
+        )
+
+        tone[-fade:] *= np.linspace(
+            1,
+            0,
+            fade
+        )
 
         audio = np.concatenate(
             (audio, tone)
@@ -94,10 +181,10 @@ def generate_tune(notes, duration=0.35):
 
 def convert_to_wav(audio):
 
-    audio = audio / max(
-        1,
-        np.max(np.abs(audio))
-    )
+    peak = np.max(np.abs(audio))
+
+    if peak > 0:
+        audio = audio / peak
 
     audio = (
         audio * 32767
@@ -120,21 +207,28 @@ def convert_to_wav(audio):
     return buffer
 
 
-birthday_audio = generate_tune(notes)
+if len(selected_notes) > 0:
 
-wav_file = convert_to_wav(birthday_audio)
+    birthday_audio = generate_tune(
+        selected_notes,
+        note_duration
+    )
 
-st.audio(
-    wav_file,
-    format="audio/wav"
-)
+    wav_file = convert_to_wav(
+        birthday_audio
+    )
 
-st.download_button(
-    "⬇️ Download Birthday Tune",
-    data=wav_file,
-    file_name="birthday_tune.wav",
-    mime="audio/wav"
-)
+    st.audio(
+        wav_file,
+        format="audio/wav"
+    )
+
+    st.download_button(
+        "⬇️ Download Selected Tune",
+        data=wav_file,
+        file_name="birthday_tune.wav",
+        mime="audio/wav"
+    )
 
 st.divider()
 
